@@ -1,6 +1,9 @@
 //#include <Adafruit_Sensor.h>
 //#include <DHT.h>
 //#include <DHT_U.h>
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
+#include <WiFiManager.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <Arduino.h>
@@ -42,6 +45,7 @@ void callback(char *topic, byte *payload, unsigned int length); //funcion que se
 void reconnect();                                               //funcion para reconectar con el broker
 
 void sensate(); //funcion que sensa la temperatura y humedad y la muestra por el puerto serial
+void configWiFi();
 
 //*****************************
 
@@ -152,12 +156,14 @@ void callback(char *topic, byte *payload, unsigned int length)
     digitalWrite(LED_BUILTIN, HIGH);
 
   }
-  if (topico=="prog3" && incoming=="on") {
+  if (topico=="wiFiManager3" && incoming=="on") {
     Serial.println("Programador on");
+    configWiFi();
   }
 
-  if (topico=="prog3" && incoming=="off") {
+  if (topico=="wiFiManager3" && incoming=="off") {
     Serial.println("Programador off");
+    ESP.reset();
   }
 }
 
@@ -175,7 +181,7 @@ void reconnect()
       Serial.println("Conectado!");
       //Nos suscribimos
       client.subscribe("act3");
-      client.subscribe("prog3");
+      client.subscribe("wiFiManager3");
     }
     else
     {
@@ -240,4 +246,19 @@ sensors_event_t event;
   Serial.print("Vdd: ");
   Serial.println(vdd);
  */
+}
+
+void configWiFi(){
+  WiFiManager wifiManager;
+
+  if (!wifiManager.startConfigPortal("OnDemandAP")) {
+    Serial.println("failed to connect and hit timeout");
+    delay(3000);
+    //reset and try again, or maybe put it to deep sleep
+    ESP.reset();
+    delay(5000);
+  }
+
+  //if you get here you have connected to the WiFi
+  Serial.println("connected...yeey :)");
 }
