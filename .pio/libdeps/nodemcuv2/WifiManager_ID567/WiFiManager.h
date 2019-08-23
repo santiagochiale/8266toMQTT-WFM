@@ -30,11 +30,13 @@ const char HTTP_PORTAL_OPTIONS[] PROGMEM  = "<form action=\"/wifi\"method=\"get\
 const char HTTP_ITEM[] PROGMEM            = "<div><a href='#p'onclick='c(this)'>{v}</a>&nbsp; <span class='q{i}'>{r}%</span></div>";
 const char HTTP_FORM_START[] PROGMEM      = "<form method='get'action='wifisave'>";
 const char HTTP_FORM_PARAM[] PROGMEM      = "<br/><input id=''name=''length=64 type='text'placeholder=''>";
-const char HTTP_FORM_PARAMETER[] PROGMEM  = "<br/><input id='{p}'name='{p}'length=64 type='text'placeholder='{p}'>";
+const char HTTP_FORM_PARAMETER[] PROGMEM  = "<br/><label for=\"{p}\">{p}</label><input id='{p}'name='{p}'length=64 type='text'placeholder='{vp}'>";
 const char HTTP_FORM_END[] PROGMEM        = "<br/><button type='submit'>save</button></form>";
 const char HTTP_SCAN_LINK[] PROGMEM       = "<br/><div class=\"c\"><a href=\"/wifi\">Scan</a></div>";
 const char HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br/>Trying to connect ESP to network.<br/>If it fails reconnect to AP to try again</div>";
 const char HTTP_END[] PROGMEM             = "</div></body></html>";
+
+
 
 
 
@@ -148,6 +150,11 @@ class WiFiManager
     char SPIFFSparametro3 [40];
     char SPIFFSparametro4 [40];
     char SPIFFSparametro5 [40];
+    String etParametro1 = "Parametro1";
+    String etParametro2 = "Parametro2";
+    String etParametro3 = "Parametro3";
+    String etParametro4 = "Parametro4";
+    String etParametro5 = "Parametro5";
     unsigned long _configPortalTimeout    = 0;
     unsigned long _connectTimeout         = 0;
     unsigned long _configPortalStart      = 0;

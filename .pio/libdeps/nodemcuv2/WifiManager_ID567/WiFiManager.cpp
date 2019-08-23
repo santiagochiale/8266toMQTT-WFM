@@ -606,11 +606,11 @@ void WiFiManager::handleWifiSave() {
   _ssid = server->arg("s").c_str();
   _pass = server->arg("p").c_str();
   //lectura de parametros del usuario
-  newParametro1= server->arg("parametro1").c_str();
-  newParametro2= server->arg("parametro2").c_str();
-  newParametro3= server->arg("parametro3").c_str();
-  newParametro4= server->arg("parametro4").c_str();
-  newParametro5= server->arg("parametro5").c_str();
+  newParametro1= server->arg(etParametro1).c_str();
+  newParametro2= server->arg(etParametro2).c_str();
+  newParametro3= server->arg(etParametro3).c_str();
+  newParametro4= server->arg(etParametro4).c_str();
+  newParametro5= server->arg(etParametro5).c_str();
 
   //grabado de los parametros de los usuarios en el archivo config.jsonBuffer
   Serial.println("saving config");
@@ -780,6 +780,7 @@ void WiFiManager::handleReset() {
 
 /** Handle the custom page */
 void WiFiManager::handleParameters() {
+
   //leemos los valores guardados en el archivo de configuración
   Serial.println("mounted file system");
   if (SPIFFS.exists("/configuracion.json")) {
@@ -825,15 +826,20 @@ void WiFiManager::handleParameters() {
   page += FPSTR(HTTP_HEAD_END);
   page += FPSTR(HTTP_FORM_START);
   page += FPSTR(HTTP_FORM_PARAMETER);
-  page.replace("{p}", "parametro1");
+  page.replace("{p}", etParametro1);
+  page.replace("{vp}", SPIFFSparametro1);
   page += FPSTR(HTTP_FORM_PARAMETER);
-  page.replace("{p}", "parametro2");
+  page.replace("{p}", etParametro2);
+  page.replace("{vp}", SPIFFSparametro2);
   page += FPSTR(HTTP_FORM_PARAMETER);
-  page.replace("{p}", "parametro3");
+  page.replace("{p}", etParametro3);
+  page.replace("{vp}", SPIFFSparametro3);
   page += FPSTR(HTTP_FORM_PARAMETER);
-  page.replace("{p}", "parametro4");
+  page.replace("{p}", etParametro4);
+  page.replace("{vp}", SPIFFSparametro4);
   page += FPSTR(HTTP_FORM_PARAMETER);
-  page.replace("{p}", "parametro5");
+  page.replace("{p}", etParametro5);
+  page.replace("{vp}", SPIFFSparametro5);
   page += FPSTR(HTTP_FORM_END);
   page += FPSTR(HTTP_END);
 
