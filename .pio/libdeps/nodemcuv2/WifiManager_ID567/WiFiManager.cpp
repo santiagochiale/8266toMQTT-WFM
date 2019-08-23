@@ -599,36 +599,61 @@ void WiFiManager::handleWifi(boolean scan) {
 
 /** Handle the WLAN save form and redirect to WLAN config page again */
 void WiFiManager::handleWifiSave() {
+
   DEBUG_WM(F("WiFi save"));
 
   //SAVE/connect here
   _ssid = server->arg("s").c_str();
   _pass = server->arg("p").c_str();
   //lectura de parametros del usuario
-  parametro1= server->arg("parametro1").c_str();
-  parametro2= server->arg("parametro2").c_str();
-  parametro3= server->arg("parametro3").c_str();
-  parametro4= server->arg("parametro4").c_str();
-  parametro5= server->arg("parametro5").c_str();
+  newParametro1= server->arg("parametro1").c_str();
+  newParametro2= server->arg("parametro2").c_str();
+  newParametro3= server->arg("parametro3").c_str();
+  newParametro4= server->arg("parametro4").c_str();
+  newParametro5= server->arg("parametro5").c_str();
 
   //grabado de los parametros de los usuarios en el archivo config.jsonBuffer
   Serial.println("saving config");
   DynamicJsonBuffer jsonBuffer;
-  JsonObject& json = jsonBuffer.createObject();
-  json["parametro1"] = parametro1;
-  json["parametro2"] = parametro2;
-  json["parametro3"] = parametro3;
-  json["parametro4"] = parametro4;
-  json["parametro5"] = parametro5;
+  JsonObject& jsonWrite = jsonBuffer.createObject();
 
+  if (newParametro1!=NULL) {
+    jsonWrite["parametro1"] = newParametro1;
+  }else{
+    jsonWrite["parametro1"] = SPIFFSparametro1;
+  }
+
+  if (newParametro2!=NULL) {
+    jsonWrite["parametro2"] = newParametro2;
+  }else{
+    jsonWrite["parametro2"] = SPIFFSparametro2;
+  }
+
+  if (newParametro3!=NULL) {
+    jsonWrite["parametro3"] = newParametro3;
+  }else{
+    jsonWrite["parametro3"] = SPIFFSparametro3;
+  }
+
+  if (newParametro4!=NULL) {
+    jsonWrite["parametro4"] = newParametro4;
+  }else{
+    jsonWrite["parametro4"] = SPIFFSparametro4;
+  }
+
+  if (newParametro5!=NULL) {
+    jsonWrite["parametro5"] = newParametro5;
+  }else{
+    jsonWrite["parametro5"] = SPIFFSparametro5;
+  }
 
   if (SPIFFS.exists("/configuracion.json")) {
     File configFile = SPIFFS.open("/configuracion.json", "w");
     if (!configFile) {
       Serial.println("failed to open config file for writing");
     }
-    json.printTo(Serial);
-    json.printTo(configFile);
+    jsonWrite.printTo(Serial);
+    jsonWrite.printTo(configFile);
     configFile.close();
     Serial.println("Archivo grabado correctamente");
   }else{
@@ -755,6 +780,44 @@ void WiFiManager::handleReset() {
 
 /** Handle the custom page */
 void WiFiManager::handleParameters() {
+  //leemos los valores guardados en el archivo de configuración
+  Serial.println("mounted file system");
+  if (SPIFFS.exists("/configuracion.json")) {
+    //file exists, reading and loading
+    Serial.println("reading config file");
+    File configFile = SPIFFS.open("/configuracion.json", "r");
+    if (configFile) {
+      Serial.println("opened config file");
+      size_t size = configFile.size();
+      // Allocate a buffer to store contents of the file.
+      std::unique_ptr<char[]> buf(new char[size]);
+
+      configFile.readBytes(buf.get(), size);
+      DynamicJsonBuffer jsonBuffer;
+      JsonObject& jsonRead = jsonBuffer.parseObject(buf.get());
+      jsonRead.printTo(Serial);
+      if (jsonRead.success()) {
+        Serial.println("\nparsed json");
+
+        strcpy(SPIFFSparametro1, jsonRead["parametro1"]);
+        strcpy(SPIFFSparametro2, jsonRead["parametro2"]);
+        strcpy(SPIFFSparametro3, jsonRead["parametro3"]);
+        strcpy(SPIFFSparametro4, jsonRead["parametro4"]);
+        strcpy(SPIFFSparametro5, jsonRead["parametro5"]);
+
+        Serial.println(SPIFFSparametro1);
+        Serial.println(SPIFFSparametro2);
+        Serial.println(SPIFFSparametro3);
+        Serial.println(SPIFFSparametro4);
+        Serial.println(SPIFFSparametro5);
+
+      } else {
+        Serial.println("failed to load json config");
+      }
+      configFile.close();
+    }
+  }
+  //end read
   String page = FPSTR(HTTP_HEAD);
   page.replace("{v}", "Parametros");
   page += FPSTR(HTTP_STYLE);
