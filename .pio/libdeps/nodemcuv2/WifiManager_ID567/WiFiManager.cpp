@@ -432,7 +432,6 @@ void WiFiManager::handleRoot() {
   page += String(F("<h1>"));
   page += _apName;
   page += String(F("</h1>"));
-  page += String(F("<h3>WiFiManager</h3>"));
   page += FPSTR(HTTP_PORTAL_OPTIONS);
   page += FPSTR(HTTP_END);
 
@@ -527,6 +526,7 @@ void WiFiManager::handleWifi(boolean scan) {
   }
 
   page += FPSTR(HTTP_FORM_START);
+  page += FPSTR(HTTP_WIFI);
   char parLength[5];
   // add the extra parameters to the form
   for (int i = 0; i < _paramsCount; i++) {
@@ -725,29 +725,34 @@ void WiFiManager::handleInfo() {
   page += FPSTR(HTTP_STYLE);
   page += _customHeadElement;
   page += FPSTR(HTTP_HEAD_END);
-  page += F("<dl>");
-  page += F("<dt>Chip ID</dt><dd>");
-  page += ESP.getChipId();
-  page += F("</dd>");
-  page += F("<dt>Flash Chip ID</dt><dd>");
-  page += ESP.getFlashChipId();
-  page += F("</dd>");
-  page += F("<dt>IDE Flash Size</dt><dd>");
-  page += ESP.getFlashChipSize();
-  page += F(" bytes</dd>");
-  page += F("<dt>Real Flash Size</dt><dd>");
-  page += ESP.getFlashChipRealSize();
-  page += F(" bytes</dd>");
-  page += F("<dt>Soft AP IP</dt><dd>");
-  page += WiFi.softAPIP().toString();
-  page += F("</dd>");
-  page += F("<dt>Soft AP MAC</dt><dd>");
-  page += WiFi.softAPmacAddress();
-  page += F("</dd>");
-  page += F("<dt>Station MAC</dt><dd>");
-  page += WiFi.macAddress();
-  page += F("</dd>");
-  page += F("</dl>");
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "Chip Id");
+  page.replace("{infoValue}", String(ESP.getChipId()));
+
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "Flash Chip Id");
+  page.replace("{infoValue}", String(ESP.getFlashChipId()));
+
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "Flash Chip Size");
+  page.replace("{infoValue}", String(ESP.getFlashChipSize()));
+
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "Flash Chip Real Size ");
+  page.replace("{infoValue}", String(ESP.getFlashChipRealSize()));
+
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "Soft APIP");
+  page.replace("{infoValue}", WiFi.softAPIP().toString());
+
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "Soft APMACADRESS");
+  page.replace("{infoValue}", WiFi.softAPmacAddress());
+
+  page += FPSTR(HTTP_PORTAL_INFO);
+  page.replace("{info}", "MAC ADRESS");
+  page.replace("{infoValue}", WiFi.macAddress());
+
   page += FPSTR(HTTP_END);
 
   server->sendHeader("Content-Length", String(page.length()));
