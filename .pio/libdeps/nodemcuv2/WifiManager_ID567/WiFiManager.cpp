@@ -145,7 +145,9 @@ void WiFiManager::setupConfigPortal() {
   dnsServer->start(DNS_PORT, "*", WiFi.softAPIP());
 
   /* Setup web pages: root, wifi config pages, SO captive portal detectors and not found. */
-  server->on(String(F("/")), std::bind(&WiFiManager::handleRoot, this));
+
+  String rutaRoot = "/" + String(ESP.getChipId());
+  server->on(rutaRoot, std::bind(&WiFiManager::handleRoot, this));
   server->on(String(F("/wifi")), std::bind(&WiFiManager::handleWifi, this, true));
   server->on(String(F("/0wifi")), std::bind(&WiFiManager::handleWifi, this, false));
   server->on(String(F("/wifisave")), std::bind(&WiFiManager::handleWifiSave, this));
@@ -881,7 +883,7 @@ void WiFiManager::handleNotFound() {
 boolean WiFiManager::captivePortal() {
   if (!isIp(server->hostHeader()) ) {
     DEBUG_WM(F("Request redirected to captive portal"));
-    server->sendHeader("Location", String("http://") + toStringIp(server->client().localIP()), true);
+    server->sendHeader("Location", String("http://") + toStringIp(server->client().localIP()) +"/"+ String(ESP.getChipId()), true);
     server->send ( 302, "text/plain", ""); // Empty content inhibits Content-length header so we have to close the socket ourselves.
     server->client().stop(); // Stop is needed because we sent no content length
     return true;

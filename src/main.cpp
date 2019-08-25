@@ -283,8 +283,12 @@ void configWiFi(){
 
   WiFiManager wifiManager;
 
+  String deviceName = "ESP8266_" + String(ESP.getChipId());
+  char dName[20];
+  deviceName.toCharArray(dName,50);
 
-  if (!wifiManager.startConfigPortal("ESP8266") && SPIFFSinit) {
+  Serial.println(deviceName);
+  if (!wifiManager.startConfigPortal(dName) && SPIFFSinit) {
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     //reset and try again, or maybe put it to deep sleep
