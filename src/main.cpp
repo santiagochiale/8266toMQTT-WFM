@@ -17,7 +17,7 @@ char mqttUser[40];
 char mqttPass[40];
 char topicoRaizPublicacion[40];
 
-//estas etiquetas se usan en el main, WifiManager.cpp y WifiManager.h para leer u escribir el archivo config.json
+//estas etiquetas se usan en el main, WifiManager.cpp y WifiManager.h para leer y escribir el archivo config.json
 String etParametro1 = "Servidor_MQTT";
 String etParametro2 = "Puerto_MQTT";
 String etParametro3 = "User_MQTT";
@@ -160,7 +160,7 @@ void callback(char *topic, byte *payload, unsigned int length){
   if (topicoRecepcion=="act3" && incoming=="on") {
     Serial.println("Actuador on");
     digitalWrite(LED_BUILTIN, LOW);
-    readDataSPIFFS();
+    readDataSPIFFS(); //para propositos de debug se leen los valores guardados en el config.json cada vez que se acciona el actuador
   }
   if (topicoRecepcion=="act3" && incoming=="off") {
     Serial.println("Actuador off");
