@@ -1,36 +1,40 @@
-//#include <Adafruit_Sensor.h>
-//#include <DHT.h>
-//#include <DHT_U.h>
+#include <Arduino.h>
 #include <FS.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <WiFiManager.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <Arduino.h>
 #include <ArduinoJson.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
 
-//define your default values here, if there are different values in config.json, they are overwritten.
-char parametro1[40];
-char parametro2[40];
-char parametro3[40];
-char parametro4[40];
-char parametro5[40];
+//se definen las variables para los valores y las etiquetas que se usaran en el archivo de configuración config.json
+char mqttServer[40];
+char mqttPort[40];
+char mqttUser[40];
+char mqttPass[40];
+char topicoRaizPublicacion[40];
+
+//estas etiquetas se usan en el main, WifiManager.cpp y WifiManager.h para leer u escribir el archivo config.json
+String etParametro1 = "Servidor_MQTT";
+String etParametro2 = "Puerto_MQTT";
+String etParametro3 = "User_MQTT";
+String etParametro4 = "Pass_MQTT";
+String etParametro5 = "Topico_Raiz_Publicacion";
 
 
-//#define DHTTYPE DHT11
-//#define DHTPIN 2
-//DHT dht(DHTPIN, DHTTYPE);
-//ADC_MODE(ADC_VCC);
+#define DHTTYPE DHT11
+#define DHTPIN 2
+DHT dht(DHTPIN, DHTTYPE);
+ADC_MODE(ADC_VCC);
 
-//const char *mac = "11:11:11:11:11:11:11:11";
+
 String mac;
-const char *mqttServer = "casachialechascomus.ml";
-const int mqttPort = 1883; //este puerto es el que escucha el broker directo sobre tcp. la conexion entre por tcp
-const char *mqttUser = "webClient";
-const char *mqttPass = "121212";
 String topicoRecepcion = "";
 char topicoPublicacion[50] = "";
+
 
 WiFiClient espClient;           //se declara una conexion de tipo wifi
 PubSubClient client(espClient); //se genera una instancia llamada client de PubSubClient y se le pasa como parametro el medio de conexion que va a usar dicha instancia mqtt, en este caso la conexion wifi del esp
@@ -44,6 +48,7 @@ float vdd = 0;
 int beacon = 0;
 boolean SPIFFSinit = false;
 
+
 //******************************
 //****DECLARACION FUNCIONES*****
 //******************************
@@ -53,8 +58,9 @@ void callback(char *topic, byte *payload, unsigned int length); //funcion que se
 void reconnect();                                               //funcion para reconectar con el broker
 void sensate(); //funcion que sensa la temperatura y humedad y la muestra por el puerto serial
 void configWiFi();
-void saveConfigCallback ();
 void readDataSPIFFS();
+void configMQTT();
+void SPIFFSbegin();
 
 //*****************************
 
@@ -65,19 +71,22 @@ void setup()
   //dht.begin();
   delay(100);
   Serial.begin(115200);
-  randomSeed(micros());                   //planta una semilla para la generacion de numeros aleatorios.
-  setupWifi();                            //funcion que conecta a wifi
-  client.setServer(mqttServer, mqttPort); //seteo del cliente mqtt
-  client.setCallback(callback);           //listener de mensajes. cuando llegue un mensaje se ejecutara la funcion que le pasamos entre parentesis, en este caso callback
+  randomSeed(micros());//planta una semilla para la generacion de numeros aleatorios.
+
   digitalWrite(LED_BUILTIN,HIGH);
 
-  if (SPIFFS.begin()) {
-    SPIFFSinit = true;
-  }
+  SPIFFSbegin();//funcion para iniciar el sistema de archivos y verifacar que el config.json no este corrupto
+
+  setupWifi();//funcion que conecta a wifi via autoconnect. si no lo consigue llama a configWifi que abre el portal de configuracion
+  configMQTT();
+
+  int puertoMQTT = atoi(mqttPort);
+  Serial.println(puertoMQTT);
+  client.setServer(mqttServer, puertoMQTT); //seteo del cliente mqtt
+  client.setCallback(callback);           //listener de mensajes. cuando llegue un mensaje se ejecutara la funcion que le pasamos entre parentesis, en este caso callback
 }
 
-void loop()
-{
+void loop(){
   if (!client.connected())
   {              //esto controla si la conexion al broker esta activa o se cayo, si se cayo la reconecta
     reconnect(); //funcion que reconecta con el broker
@@ -108,8 +117,7 @@ void loop()
     Serial.println(msg);
 
     mac = WiFi.macAddress();
-    String topicoRaizPublicacion = "valores";
-    (topicoRaizPublicacion + "/" + mac).toCharArray(topicoPublicacion,50);
+    (String(topicoRaizPublicacion) + "/" + mac).toCharArray(topicoPublicacion,50);
 
     Serial.println(topicoPublicacion);
     client.publish(topicoPublicacion, msg); //a esta funcion publish se le pasa el topico bajo el cual se envian los valores y el char array de los valores. SOLO SE PUEDEN ENVIAR CHAR ARRAY, es por esto que se convierten las variables a string y luego a un char array.
@@ -120,28 +128,8 @@ void loop()
 //*****FUNCIONES****************
 //******************************
 
-void setupWifi()
-{
-  delay(10);/*
-  Serial.println();
-  Serial.println("Conectando a ");
-  Serial.println(ssid);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED)
-  { //agregar cantidad de intentos y una espera
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("Conectado a red WiFi!");
-  Serial.println("Dirección IP: ");
-  Serial.println(WiFi.localIP*/
-
-  //WiFiManager
-
+void setupWifi(){
+  delay(10);
 
   WiFiManager wifiManager;
 
@@ -155,8 +143,7 @@ void setupWifi()
 
 }
 
-void callback(char *topic, byte *payload, unsigned int length)
-{
+void callback(char *topic, byte *payload, unsigned int length){
   String incoming = "";
   topicoRecepcion = String(topic);
   for (int i = 0; i < length; i++)
@@ -166,16 +153,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   incoming.trim(); //esto limpia de espacios en blanco o caracteres extraños
 
   /*
-  if (incoming == "on")
-  {
-    digitalWrite(LED_BUILTIN, LOW);
-    Serial.println("on");
-  }
-  if (incoming == "off")
-  {
-    digitalWrite(LED_BUILTIN, HIGH);
-    Serial.println("off");
-  }
+
   */
    //reemplazar el codigo siguiente por switch case
 
@@ -200,8 +178,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
 }
 
-void reconnect()
-{
+void reconnect(){
+  int contIntentos = 0;
   while (!client.connected())
   {
     Serial.print("Intentando conexión Mqtt...");
@@ -222,12 +200,17 @@ void reconnect()
       Serial.print(client.state());
       Serial.println(" intentamos de nuevo en 5 segundos");
       delay(5000);
+      if (contIntentos==5) {
+        configWiFi();
+        contIntentos=0;
+      }else{
+        contIntentos=contIntentos + 1;
+      }
     }
   }
 }
 
-void sensate()
-{
+void sensate(){
 
   delay(50);
   //humedad = dht.readHumidity();
@@ -300,7 +283,7 @@ void configWiFi(){
 
   //if you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
-
+  ESP.reset();
 }
 
 void readDataSPIFFS(){
@@ -325,17 +308,17 @@ void readDataSPIFFS(){
         if (json.success()) {
           Serial.println("\nparsed json");
 
-          strcpy(parametro1, json["parametro1"]);
-          strcpy(parametro2, json["parametro2"]);
-          strcpy(parametro3, json["parametro3"]);
-          strcpy(parametro4, json["parametro4"]);
-          strcpy(parametro5, json["parametro5"]);
+          strcpy(mqttServer, json[etParametro1]);
+          strcpy(mqttPort, json[etParametro2]);
+          strcpy(mqttUser, json[etParametro3]);
+          strcpy(mqttPass, json[etParametro4]);
+          strcpy(topicoRaizPublicacion, json[etParametro5]);
 
-          Serial.println(parametro1);
-          Serial.println(parametro2);
-          Serial.println(parametro3);
-          Serial.println(parametro4);
-          Serial.println(parametro5);
+          Serial.println(mqttServer);
+          Serial.println(mqttPort);
+          Serial.println(mqttUser);
+          Serial.println(mqttPass);
+          Serial.println(topicoRaizPublicacion);
         } else {
           Serial.println("failed to load json config");
         }
@@ -346,4 +329,77 @@ void readDataSPIFFS(){
     Serial.println("failed to mount FS");
   }
   //end read
+}
+
+void configMQTT(){
+  Serial.println("mounting FS...");
+
+  if (SPIFFSinit) {
+    Serial.println("mounted file system");
+    if (SPIFFS.exists("/configuracion.json")) {
+      //file exists, reading and loading
+      Serial.println("reading config file");
+      File configFile = SPIFFS.open("/configuracion.json", "r");
+      if (configFile) {
+        Serial.println("opened config file");
+        size_t size = configFile.size();
+        // Allocate a buffer to store contents of the file.
+        std::unique_ptr<char[]> buf(new char[size]);
+
+        configFile.readBytes(buf.get(), size);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& json = jsonBuffer.parseObject(buf.get());
+        json.printTo(Serial);
+        if (json.success()) {
+          Serial.println("\nparsed json");
+
+          strcpy(mqttServer, json[etParametro1]);
+          strcpy(mqttPort, json[etParametro2]);
+          strcpy(mqttUser, json[etParametro3]);
+          strcpy(mqttPass, json[etParametro4]);
+          strcpy(topicoRaizPublicacion, json[etParametro5]);
+
+          Serial.println(mqttServer);
+          Serial.println(mqttPort);
+          Serial.println(mqttUser);
+          Serial.println(mqttPass);
+          Serial.println(topicoRaizPublicacion);
+        } else {
+          Serial.println("failed to load json config");
+        }
+        configFile.close();
+      }
+    }
+  } else {
+    Serial.println("failed to mount FS");
+  }
+  //end read
+}
+
+void SPIFFSbegin(){
+  if (SPIFFS.begin()) {
+    SPIFFSinit = true;
+    Serial.println("SPIFFS iniciado");
+    if (!SPIFFS.exists("/configuracion.json")) {
+      Serial.println("Archivo de configuaración dañado, grabado parametros de base");
+
+      DynamicJsonBuffer jsonBuffer;
+      JsonObject& jsonWrite = jsonBuffer.createObject();
+
+      jsonWrite[etParametro1] = "";
+      jsonWrite[etParametro2] = "";
+      jsonWrite[etParametro3] = "";
+      jsonWrite[etParametro4] = "";
+      jsonWrite[etParametro5] = "";
+
+      File configFile = SPIFFS.open("/configuracion.json", "w");
+      if (!configFile) {
+        Serial.println("failed to open config file for writing");
+      }
+      jsonWrite.printTo(Serial);
+      jsonWrite.printTo(configFile);
+      configFile.close();
+      Serial.println("Archivo grabado correctamente");
+    }
+  }
 }

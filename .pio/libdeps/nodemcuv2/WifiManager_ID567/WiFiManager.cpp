@@ -68,6 +68,11 @@ const char* WiFiManagerParameter::getCustomHTML() {
   return _customHTML;
 }
 
+extern String etParametro1;
+extern String etParametro2;
+extern String etParametro3;
+extern String etParametro4;
+extern String etParametro5;
 
 WiFiManager::WiFiManager() {
     _max_params = WIFI_MANAGER_MAX_PARAMS;
@@ -620,33 +625,33 @@ void WiFiManager::handleWifiSave() {
   JsonObject& jsonWrite = jsonBuffer.createObject();
 
   if (newParametro1!=NULL) {
-    jsonWrite["parametro1"] = newParametro1;
+    jsonWrite[etParametro1] = newParametro1;
   }else{
-    jsonWrite["parametro1"] = SPIFFSparametro1;
+    jsonWrite[etParametro1] = SPIFFSparametro1;
   }
 
   if (newParametro2!=NULL) {
-    jsonWrite["parametro2"] = newParametro2;
+    jsonWrite[etParametro2] = newParametro2;
   }else{
-    jsonWrite["parametro2"] = SPIFFSparametro2;
+    jsonWrite[etParametro2] = SPIFFSparametro2;
   }
 
   if (newParametro3!=NULL) {
-    jsonWrite["parametro3"] = newParametro3;
+    jsonWrite[etParametro3] = newParametro3;
   }else{
-    jsonWrite["parametro3"] = SPIFFSparametro3;
+    jsonWrite[etParametro3] = SPIFFSparametro3;
   }
 
   if (newParametro4!=NULL) {
-    jsonWrite["parametro4"] = newParametro4;
+    jsonWrite[etParametro4] = newParametro4;
   }else{
-    jsonWrite["parametro4"] = SPIFFSparametro4;
+    jsonWrite[etParametro4] = SPIFFSparametro4;
   }
 
   if (newParametro5!=NULL) {
-    jsonWrite["parametro5"] = newParametro5;
+    jsonWrite[etParametro5] = newParametro5;
   }else{
-    jsonWrite["parametro5"] = SPIFFSparametro5;
+    jsonWrite[etParametro5] = SPIFFSparametro5;
   }
 
   if (SPIFFS.exists("/configuracion.json")) {
@@ -807,11 +812,11 @@ void WiFiManager::handleParameters() {
       if (jsonRead.success()) {
         Serial.println("\nparsed json");
 
-        strcpy(SPIFFSparametro1, jsonRead["parametro1"]);
-        strcpy(SPIFFSparametro2, jsonRead["parametro2"]);
-        strcpy(SPIFFSparametro3, jsonRead["parametro3"]);
-        strcpy(SPIFFSparametro4, jsonRead["parametro4"]);
-        strcpy(SPIFFSparametro5, jsonRead["parametro5"]);
+        strcpy(SPIFFSparametro1, jsonRead[etParametro1]);
+        strcpy(SPIFFSparametro2, jsonRead[etParametro2]);
+        strcpy(SPIFFSparametro3, jsonRead[etParametro3]);
+        strcpy(SPIFFSparametro4, jsonRead[etParametro4]);
+        strcpy(SPIFFSparametro5, jsonRead[etParametro5]);
 
         Serial.println(SPIFFSparametro1);
         Serial.println(SPIFFSparametro2);
