@@ -24,16 +24,13 @@ char parametro5[40];
 //ADC_MODE(ADC_VCC);
 
 //const char *mac = "11:11:11:11:11:11:11:11";
-const char *mac = "33:33:33:33:33:33:33:33";
-
-//const char *ssid = "SCH";
-// char *password = "Santiago200204492";
-
+String mac;
 const char *mqttServer = "casachialechascomus.ml";
 const int mqttPort = 1883; //este puerto es el que escucha el broker directo sobre tcp. la conexion entre por tcp
 const char *mqttUser = "webClient";
 const char *mqttPass = "121212";
-String topico = "";
+String topicoRecepcion = "";
+char topicoPublicacion[50] = "";
 
 WiFiClient espClient;           //se declara una conexion de tipo wifi
 PubSubClient client(espClient); //se genera una instancia llamada client de PubSubClient y se le pasa como parametro el medio de conexion que va a usar dicha instancia mqtt, en este caso la conexion wifi del esp
@@ -110,7 +107,12 @@ void loop()
     Serial.print("Publicamos mensaje --> ");
     Serial.println(msg);
 
-    client.publish("valores/33:33:33:33:33:33:33:33", msg); //a esta funcion publish se le pasa el topico bajo el cual se envian los valores y el char array de los valores. SOLO SE PUEDEN ENVIAR CHAR ARRAY, es por esto que se convierten las variables a string y luego a un char array.
+    mac = WiFi.macAddress();
+    String topicoRaizPublicacion = "valores";
+    (topicoRaizPublicacion + "/" + mac).toCharArray(topicoPublicacion,50);
+
+    Serial.println(topicoPublicacion);
+    client.publish(topicoPublicacion, msg); //a esta funcion publish se le pasa el topico bajo el cual se envian los valores y el char array de los valores. SOLO SE PUEDEN ENVIAR CHAR ARRAY, es por esto que se convierten las variables a string y luego a un char array.
   }
 }
 
@@ -156,7 +158,7 @@ void setupWifi()
 void callback(char *topic, byte *payload, unsigned int length)
 {
   String incoming = "";
-  String topico = String(topic);
+  topicoRecepcion = String(topic);
   for (int i = 0; i < length; i++)
   {
     incoming += (char)payload[i]; //esta funcion convierte a caracter el contenido de payload (uno por uno) y se lo vamos sumando a la varible de tipo string incoming.
@@ -177,22 +179,22 @@ void callback(char *topic, byte *payload, unsigned int length)
   */
    //reemplazar el codigo siguiente por switch case
 
-  if (topico=="act3" && incoming=="on") {
+  if (topicoRecepcion=="act3" && incoming=="on") {
     Serial.println("Actuador on");
     digitalWrite(LED_BUILTIN, LOW);
     readDataSPIFFS();
   }
-  if (topico=="act3" && incoming=="off") {
+  if (topicoRecepcion=="act3" && incoming=="off") {
     Serial.println("Actuador off");
     digitalWrite(LED_BUILTIN, HIGH);
 
   }
-  if (topico=="wiFiManager3" && incoming=="on") {
+  if (topicoRecepcion=="wiFiManager3" && incoming=="on") {
     Serial.println("Programador on");
     configWiFi();
   }
 
-  if (topico=="wiFiManager3" && incoming=="off") {
+  if (topicoRecepcion=="wiFiManager3" && incoming=="off") {
     Serial.println("Programador off");
     ESP.reset();
   }
