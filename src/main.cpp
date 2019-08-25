@@ -48,7 +48,7 @@ float vdd = 0;
 int beacon = 0;
 boolean SPIFFSinit = false;
 
-
+//git desde platformio
 //******************************
 //****DECLARACION FUNCIONES*****
 //******************************
